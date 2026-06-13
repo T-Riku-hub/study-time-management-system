@@ -36,3 +36,7 @@ Raspberry Pi5を用いたデスクワーク専用の勉強管理システム
     
     ・notionに今まで記録した全てのデータを表形式と棒グラフ形式で表示する (notionはメモやタスク管理、ドキュメント管理、などのさまざまなツールを1つにまとめたアプリケーション)
 
+・システムアーキテクチャ
+
+<img width="873" height="474" alt="image" src="https://github.com/user-attachments/assets/1c36a9dc-769f-4686-a216-6db7138cf5ed" />
+
