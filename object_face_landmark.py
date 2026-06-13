@@ -77,24 +77,32 @@ try:
                     if elapsed_time > 3:#10秒間両目が閉じていたら is_sleeping をTrueにする
                         print("Sleeping")
                         is_sleeping=True
+                    cv2.putText(frame, f"EAR_L: {left_ear:.2f}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                        
+                    cv2.putText(frame, f"EAR_R: {right_ear:.2f}", (190, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                    
+                    cv2.imshow('frame', frame)
                 else:
                     sleep_start_time = 0  # 目が開いたらリセット
                     results = model(frame,verbose=False,save=False,conf=0.5)
-                    items = results[0]
-                    for item in items:
-                        cls = int(item.boxes.cls)
-                        if cls==0:
-                            print("スマートフォンを検知")
+                    for result in results:
+                            boxes = result.boxes
+                            #スマートフォンを検出
+                            if len(boxes)>=1:
+                                print("スマートフォンを検出")
+                                break
                     annotated = results[0].plot()
                     
                     
-                cv2.putText(annotated, f"EAR_L: {left_ear:.2f}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                    cv2.putText(annotated, f"EAR_L: {left_ear:.2f}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                        
+                    cv2.putText(annotated, f"EAR_R: {right_ear:.2f}", (190, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
                     
-                cv2.putText(annotated, f"EAR_R: {right_ear:.2f}", (190, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
-                
-                cv2.imshow('frame', annotated)
+                    cv2.imshow('frame', annotated)
         if cv2.waitKey(5) & 0xFF == 27:
             break        
         time.sleep(0.05)
