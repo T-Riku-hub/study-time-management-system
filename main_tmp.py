@@ -7,10 +7,10 @@ import time
 import threading
 import gpiozero
 import LCD1602
+import write_DB
 from counter_timer import counter_or_timer
 from setup_timer import setup_time
-from write_csv_file import write_csv
-from plot_csvFile import plot_CSVFile
+from plot_png_file import plot_png_file
 from send_mail import send_email
 from datetime import datetime
 from ultralytics import YOLO
@@ -159,29 +159,36 @@ def detect_sleep_and_cell_phone():
                             print("Sleeping")
                             is_sleeping=True
                             buzzer.on()
+                        cv2.putText(frame, f"EAR_L: {left_ear:.2f}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                            
+                        cv2.putText(frame, f"EAR_R: {right_ear:.2f}", (190, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                        
+                        cv2.imshow('frame', frame)
                     else:
                         # 目が開いたらリセット & ブザーをオフ
                         is_sleeping = False
-                        sleep_start_time = 0  
                         buzzer.off()
                         #物体検出を実行
                         results = model(frame,verbose=False,save=False,conf=0.5)
-                        boxes = results[0].boxes
-                        
-                        if len(boxes) == 0:
-                            print("スマートフォンは検知されていない")
-                            is_detect_cell_phone=False
-                        else:
-                            print("スマートフォンを検知")
-                            is_detect_cell_phone=True
-                        
+                        for result in results:
+                            boxes = result.boxes
+                            #スマートフォンを検出
+                            if len(boxes)>=1:
+                                is_detect_cell_phone=True
+                                break
+                            #スマートフォンが検出されなかった
+                            else:
+                                is_detect_cell_phone=False
+                                
                         annotated = results[0].plot()
-                            
-                    cv2.putText(annotated, f"EAR_L: {left_ear:.2f}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,0), 2) 
-                    cv2.putText(annotated, f"EAR_R: {right_ear:.2f}", (250, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,0), 2)
-                    cv2.imshow('frame', annotated)
+                        
+                        cv2.putText(annotated, f"EAR_L: {left_ear:.2f}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,0), 2) 
+                        cv2.putText(annotated, f"EAR_R: {right_ear:.2f}", (250, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,0), 2)
+                        cv2.imshow('frame', annotated)
             #顔のランドマークが検出できなかった時
             else:
                 is_sleeping=True #寝ていない場合もあるがこのフラグをTrueにする
@@ -202,8 +209,7 @@ def detect_sleep_and_cell_phone():
         btn.close()
         buzzer.close()
 
-#現在の日時を取得
-now = datetime.now()
+
 #最初の入力でカウンターかタイマーを選択
 Counter_OR_Timer = counter_or_timer()
 
@@ -222,16 +228,18 @@ detect_sleep_and_cell_phone()
 #メインの処理が終了したら、スレッドを終了
 thread_1.join()
 
-write_csv(now=now,total_time=total_time)
-print("csvファイルに今回のデータが記録されました")
-today_study_time = plot_CSVFile(now)
+#現在の日時を取得
+now = datetime.now()
+
+write_DB.write_SQL(now,total_time)
+write_DB.write_notion_db(now,total_time)
+today_study_time_str, csv_data, sum_study_time = plot_png_file()
 print("グラフの保存が完了しました")
-send_email(total_time=total_time,date_str=f"{now.year}/{now.month}/{now.day}",
-today_study_time=today_study_time,send_file="result.png")
+send_email(
+    total_time=total_time,
+    date_str=f"{now.year}/{now.month}/{now.day}",
+    today_study_time_str=today_study_time_str,
+    csv_data=csv_data, 
+    sum_study_time=sum_study_time,
+    send_file="result.png")
 print('メールを送信しました')
-'''
-結合の案
-write_csv関数をwrite_DBのようなものに変えて、その中でnotionとMySQLにデータを記録する処理を行う
-plot_bar関数の中で、MySQLに空データを取得、棒グラフを作成,その日の合計の勉強時間、と7日間分のcsv形式のデータを戻り値として返す
-send_emailの中でgeminiによるデータ分析,emailを送信
-'''

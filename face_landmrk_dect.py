@@ -75,7 +75,7 @@ def detect_sleep_and_cell_phone():
             
             #フレームからランドマークを検出する処理
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            timestamp_ms = int(time.time() * 1000)
+            timestamp_ms = int((time.time()*1000))#秒単位からmsに変換
             #推論を実行(videoの場合はmsに変換したフレームのタイムスタンプも指定する)
             detection_result = landmarker.detect_for_video(mp_image, timestamp_ms)
 

@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 import mysql.connector
+from dotenv import load_dotenv
+import os
 
 def summarize_daily_study_time(df_base):
     now = datetime.now()
@@ -26,17 +28,19 @@ def summarize_daily_study_time(df_base):
     sec = sec%60
     hour += minute//60
     minute = minute%60
+    #その日の合計の勉強時間(str)
     total_time_str = f"{hour}h {minute}m {sec}s"
-    #m/d の形式に変換した列に切り替える
+    #m/d の形式に変換した列をインデックスにする
     df_sum.set_index("Date",inplace=True)
     #過去7日間のデータを取得
     return df_sum[-7:],total_time_str
     
-def plot_CSVFile():
+def plot_png_file():
+    load_dotenv()
     conn = mysql.connector.connect(
-    host="192.168.128.174",
+    host=os.environ.get("SQL_SERVER"),
     user="pi",
-    password="raspberry",
+    password=os.environ.get("SQL_PASSWORD"),
     database="mydatabase"
     )
     #カーソルを取得
@@ -48,7 +52,18 @@ def plot_CSVFile():
     #ベースとなるデータフレームを準備
     df = pd.DataFrame(result,columns=["Date","hour","min","sec"])
     df_sum_reslut,study_time_str = summarize_daily_study_time(df)
-        
+    #7日間分の勉強時間のデータを処理
+    sum_hour = df_sum_reslut["hour"].sum(numeric_only=True)
+    sum_minute = df_sum_reslut["min"].sum(numeric_only=True)
+    sum_sec = df_sum_reslut["sec"].sum(numeric_only=True)
+    sum_minute += sum_sec//60
+    sum_sec = sum_sec%60
+    sum_hour += sum_minute//60
+    sum_minute = sum_minute%60
+    #7日間の合計時間
+    sum_study_time=sum_hour+round(sum_minute/60.0,1)
+    #csv形式の7日間分の勉強時間のデータ
+    csv_str = df_sum_reslut.iloc[:,0:2].to_csv()
     #x軸:日付, y軸 勉強時間 として棒グラフを準備
     plt.bar(df_sum_reslut.index,df_sum_reslut["hour"]
             +round(df_sum_reslut["min"]/60.0,2))
@@ -58,13 +73,14 @@ def plot_CSVFile():
     plt.yticks(y_axis)
     #グラフを保存
     plt.savefig("result.png")
-    return study_time_str
+    return study_time_str,csv_str,sum_study_time
     
 def plot_bar():
+    load_dotenv()
     conn = mysql.connector.connect(
-    host="192.168.128.174",
+    host=os.environ.get("SQL_SERVER"),
     user="pi",
-    password="raspberry",
+    password=os.environ.get("SQL_PASSWORD"),
     database="mydatabase"
     )
     #カーソルを取得
@@ -84,10 +100,10 @@ def plot_bar():
     sum_sec = sum_sec%60
     sum_hour += sum_minute//60
     sum_minute = sum_minute%60
-    result = f"{sum_hour}:{sum_minute}:{sum_sec}"
+    #result = f"{sum_hour}:{sum_minute}:{sum_sec}"
     #7日間の合計時間
     sum_study_time=sum_hour+round(sum_minute/60.0,1)
-    #7日間分の勉強時間のデータをcsv形式に変換
+    #csv形式の7日間分の勉強時間のデータ
     csv_str = df_sum_reslut.iloc[:,0:2].to_csv()
     #棒グラフを作成
     plt.bar(df_sum_reslut.index,df_sum_reslut["hour"]+round(df_sum_reslut["min"]/60.0,2))
@@ -103,7 +119,7 @@ if __name__=="__main__":
     print("今日の勉強時間")
     study_time,csv_str,sum_study_time = plot_bar()
     print(study_time)
-    print("7日間分のデータ")
+    print("csv形式の7日間分のデータ")
     print(csv_str)
     print(f"7日間の合計時間:{sum_study_time}h")
     print(f"足らない時間{20-sum_study_time}h")

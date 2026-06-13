@@ -9,6 +9,7 @@ def write_notion_db(now,total_time):
     notion = Client(auth=os.environ.get("NOTION_TOKEN"))
     database_id = os.environ["NOTION_DATABASE_ID"]
 
+    #書き込むデータ
     results = notion.databases.retrieve(database_id=database_id)
     results = notion.data_sources.query(results["data_sources"][0]["id"])
     hour = int(total_time/3600)
@@ -24,44 +25,48 @@ def write_notion_db(now,total_time):
                 "minute":{"number":minute},
                 "sec":{"number":sec}
             }
-    )
+        )
+        print("Notionをデータを送信")
     except Exception as e:
-        print(f"追加中にエラーが発生しました: {e}")
+        print(f"Notionでデータを追加中にエラーが発生: {e}")
     
 def write_SQL(now,total_time):
+    load_dotenv()
     #接続
-    conn = mysql.connector.connect(
-    host="192.168.128.174",
-    user="pi",
-    password="raspberry",
-    database="mydatabase"
-    )
-    #カーソルを取得
-    cursor=conn.cursor()
-    
-    #書き込むデータ
-    date_str=str(now.strftime("%Y-%m-%d"))
-    hour = int(total_time/3600)
-    minute = int((total_time%3600)/60)
-    sec=   (total_time%3600)%60
-    val = (date_str,hour,minute,sec)
-    
-    insert_query="""
-    INSERT INTO study_time_test (Date, hour, minute, sec) VALUES (%s,%s,%s,%s)
-    """
-    
-    cursor.execute(insert_query,val)
-    conn.commit()
-    # 接続を閉じる
-    cursor.close()
-    conn.close()
-    
+    try:
+        conn = mysql.connector.connect(
+        host=os.environ.get("SQL_SERVER"),
+        user="pi",
+        password=os.environ.get("SQL_PASSWORD"),
+        database="mydatabase"
+        )
+        #カーソルを取得
+        cursor=conn.cursor()
+        
+        #書き込むデータ
+        date_str=str(now.strftime("%Y-%m-%d"))
+        hour = int(total_time/3600)
+        minute = int((total_time%3600)/60)
+        sec=   (total_time%3600)%60
+        val = (date_str,hour,minute,sec)
+        
+        insert_query="""
+        INSERT INTO study_time_test (Date, hour, minute, sec) VALUES (%s,%s,%s,%s)
+        """
+        cursor.execute(insert_query,val)
+        conn.commit()
+        # 接続を閉じる
+        cursor.close()
+        conn.close()
+        print("MySQLへデータを送信")
+    except Exception as e:
+        print(f"MySQLでデータを追加中にエラーが発生: {e}")
+        cursor.close()
+        conn.close()
     
 if __name__=="__main__":
     now=datetime.now()
-    total_time=3281
+    total_time=7777
     write_notion_db(now,total_time)
-    print("Notionに書き込み完了")
     write_SQL(now,total_time)
-    print("MySQLに書き込み完了")
     

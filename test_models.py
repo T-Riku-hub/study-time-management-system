@@ -11,15 +11,14 @@ while True:
 
     results = model(frame,verbose=False,save=False,conf=0.5)
     
-    boxes = results[0].boxes
-
-    if len(boxes) == 0:
-        print("スマートフォンは検知されていない")
-        result_text="Not detected smartphone"
-    else:
-        print("スマートフォンを検知")
-        result_text="Detected smartphone"
-    
+    for result in results:
+        boxes = result.boxes
+        print(len(boxes))
+        if len(boxes)>=1:
+            print("検出")
+            break
+        else:
+            print("検出してない")
             
     annotated = results[0].plot()
     cv2.putText(annotated, text=result_text,org=(100, 300),
