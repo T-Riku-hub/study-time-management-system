@@ -38,5 +38,4 @@ Raspberry Pi5を用いたデスクワーク専用の勉強管理システム
 
 ・システムアーキテクチャ
 
-<img width="873" height="474" alt="image" src="https://github.com/user-attachments/assets/1c36a9dc-769f-4686-a216-6db7138cf5ed" />
-
+<img width="794" height="449" alt="スクリーンショット 2026-06-15 11 38 31" src="https://github.com/user-attachments/assets/0743fa6c-f840-4ce7-b826-bc8616f9115d" />
